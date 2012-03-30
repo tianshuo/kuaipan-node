@@ -1,20 +1,105 @@
-# dropbox-node
+# Kuaipan-node
 
-An OAuth-enabled Node.js client for working with the Dropbox API.
+这个是金山快盘的Node.js客户端，本程序以异步方式运行。
+
+An OAuth-enabled Node.js client for working with the Kuaipan and Dropbox API.
+Work is based on Dropbox-node
 
 ## Installation
 
-dropbox-node depends on [node-oauth](http://github.com/ciaranj/node-oauth).
+kuaipan-node depends on [node-oauth](http://github.com/ciaranj/node-oauth).
 
 To install via npm
 
-    npm install dropbox
+    npm install kuaipan
 
 To install by hand, download the module and create a symlink in `~/.node_libraries`
 
-    $ ln -s /path/to/dropbox-node/ ~/.node_libraries/dropbox-node
+    $ ln -s /path/to/kuaipan-node/ ~/.node_libraries/kuaipan-node
 
-## Usage
+## Kuaipan Usage - Implementing - below is fake
+
+To start, grab a consumer key and secret from [kuaipan.cn/developers](http://www.kuaipan.cn/developers/).
+
+### Object construction and access key pair retrieval
+First construct a KuaipanClient object, passing in the consumer key and secret.
+
+    var dropbox = new KuaipanClient(consumer_key, consumer_secret)
+
+Before calling any Kuaipan API methods, an access token pair must be obtained. This can be done one of two ways:
+
+  1. If the access token and secret are known a priori, they can be passed directly into the KuaipanClient constructor.
+
+        var kuaipan = new KuaipanClient(consumer_key, consumer_secret,
+                                        access_token, access_token_secret)
+
+  2. Otherwise, `getAccessToken` must be called in order to initialize the OAuth credentials.
+
+        kuaipan.getAccessToken(kuaipan_email, kuaipan_password, callback)
+
+The callback given to `getAccessToken` takes an error object, an access token, and an access token secret (see example below). **Please note that users' passwords should never be stored.** It is best to acquire a token once and then use it for all subsequent requests.
+
+### Calling API methods
+
+kuaipan-node provides methods covering [each of the Kuaipan API methods](http://www.kuaipan.cn/developers/document.htm). For example, to fetch and print the display name and email address associated with your account:
+
+    kuaipan.getAccountInfo(function (err, data) {
+      if (err) console.log('Error: ' + err)
+      else console.log(data.display_name + ', ' + data.email)
+    })
+
+Note that (at least at the start of a user's session) a valid access token pair must be obtained prior to interacting with the rest of the Dropbox API. This means that the API methods must be invoked within the callback passed to `getAccessToken` unless it is guaranteed that `getAccessToken` was called previously. As an example of this latter case, if building a web app, one could call API methods directly in a route that can only be accessed after going through a sign-in phase in which a call to `getAccessToken` is made.
+
+Here we upload a file and remotely move it around before deleting it.
+
+    kuaipan.getAccessToken(email, pwd, function (err, token, secret) {
+      // Upload foo.txt to the Dropbox root directory.
+      kuaipan.putFile('foo.txt', '', function (err, data) {
+        if (err) return console.error(err)
+
+        // Move it into the Public directory.
+        kuaipan.move('foo.txt', 'Public/foo.txt', function (err, data) {
+          if (err) return console.error(err)
+
+          // Delete the file.
+          kuaipan.deleteItem('Public/foo.txt', function (err, data) {
+            if (err) console.error(err.stack)
+          })
+        })
+      })
+    })
+
+### Stream-based file-downloading
+
+As of v0.0.1, kuaipan-node exposes a method `getFileStream` that allows stream-based file-downloading. This is useful when downloading large files that wouldn't easily fit in memory and thus don't play nicely with `getFile`.
+
+`getFileStream` returns an EventEmitter representing the request. The target file will be downloaded in chunks and dealt with according to the callbacks you register. Here we fetch a large file and write it to disk:
+
+    var request = kuaipan.getFileStream("path/to/huge/file")
+      , write_stream = require('fs').createWriteStream("out")
+
+    request.on('response', function (response) {
+      response.on('data', function (chunk) { write_stream.write(chunk) })
+      response.on('end', function () { write_stream.end() })
+    })
+    request.end()
+
+### Optional arguments
+
+Optional arguments (as specified in the [Kuaipan API documentation](http://www.kuaipan.cn/developers/document.htm)) can be given to API methods via an argument object.
+
+For example, here we call `getAccountInfo` and direct the API to include the HTTP status code in the response.
+
+    kuaipan.getAccountInfo({ status_in_response: true }, callback)
+
+Each method (except `getAccessToken`) can optionally take an access token and an access token secret as strings. This is the one way to get around having to call `getAccessToken` in cases where a valid key pair is known.
+
+For example, here we fetch the metadata about the Dropbox root directory, passing in an explicit key pair stored in variables.
+
+    kuaipan.getMetadata('', { token: token, secret: secret }, callback)
+
+
+## Dropbox Usage
 
 To start, grab a consumer key and secret from [dropbox.com/developers](https://dropbox.com/developers).
 
@@ -99,9 +184,9 @@ For example, here we fetch the metadata about the Dropbox root directory, passin
 
 ## Testing
 
-dropbox-node depends on [jasmine-node](http://github.com/mhevery/jasmine-node) for testing. Note that the currently-implemented tests are trivial, due to a lack of a way to effectively mock the Dropbox API.
+kuaipan-node depends on [jasmine-node](http://github.com/mhevery/jasmine-node) for testing. Note that the currently-implemented tests are trivial, due to a lack of a way to effectively mock the Dropbox API.
 
-Run specs with `node specs.js` from the root `dropbox-node` directory.
+Run specs with `node specs.js` from the root `kuaipan-node` directory.
 
 ## TODO
 * Improve test coverage.

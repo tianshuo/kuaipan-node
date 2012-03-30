@@ -1,19 +1,19 @@
 {
-  "name": "dropbox",
-  "version": "0.3.5",
-  "description": "A node.js client module for the official Dropbox API",
+  "name": "kuaipan",
+  "version": "0.0.1",
+  "description": "A node.js client module for the official Kuaipan and Dropbox API, based on dropbox-node",
   "keywords": [
     "cloud",
     "storage",
     "REST",
     "interface"
   ],
-  "homepage": "http://github.com/evnm/dropbox-node",
-  "author": "Evan Meagher <evan.meagher@gmail.com> (http://evanmeagher.net/)",
+  "homepage": "http://github.com/tianshuo/kuaipan-node",
+  "author": "Tianshuo <tianshuo@gmail.com>",
   "main": "index",
   "repository": {
     "type": "git",
-    "url": "git://github.com/evnm/dropbox-node.git"
+    "url": "git://github.com/tianshuo/kuaipan-node.git"
   },
   "scripts": {
     "test": "node specs.js"
